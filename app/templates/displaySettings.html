@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./output.css" rel="stylesheet">
+    <title>Display Settings</title>
+</head>
+
+<style>
+    .category-container{
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 0;
+            white-space: nowrap;
+            color: white;
+            &::-webkit-scrollbar {
+            width: 6px; 
+            }
+            &::-webkit-scrollbar-thumb {
+            background: #00000065; 
+            border-radius: 5px; 
+            }
+        }
+        
+    .category-item{
+            display: inline-block;
+            margin-right: 20px;
+            width: 100px;
+            height: 100px;
+            border-width: 2px;
+            border-color: #40677e;
+            border-radius: 0.25rem;
+            flex-shrink: 0;
+        }
+    body{
+            min-height: 100vh;
+            background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.575), rgba(0, 0, 0)), url('https://halo.wiki.gallery/images/thumb/c/ce/HINF_Repository.png/1200px-HINF_Repository.png');
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat;  
+        }
+</style>
+
+<body>
+    <section class="category color-white">
+        <h1 class="text-center text-white py-2 font-bold">Display Settings</h1>
+        <h2 class="text-white px-4 py-2 ">Statistics</h2>
+        <div class="category-container">
+            <button class="category-item">KD</button>
+            <button class="category-item">Matches</button>
+            <button class="category-item">Win %</button>
+            <button class="category-item">Medal Count</button>
+            <button class="category-item">Accuracy</button>
+            <button class="category-item">Stat</button>
+            <button class="category-item">Stat</button>
+            <button class="category-item">Stat</button>
+        </div>
+
+        <div>
+        <h3 class="text-white px-4 py-2 ">Spree</h3>
+            <div class="category-container">
+            <button class="category-item">K Spree</button>
+            <button class="category-item">Frenzy</button>
+            <button class="category-item">Running Riot</button>
+            <button class="category-item">Rampage</button>
+            <button class="category-item">Nightmare</button>
+            <button class="category-item">Boogeyman</button>
+            <button class="category-item">Grim Reaper</button>
+            <button class="category-item">Demon</button>
+
+        </div>
+
+        </div>
+        <h4>Multi</h4>
+        <div>
+
+        </div>
+        <h5>Performance</h5>
+        <div>
+
+        </div>
+    </section>
+</body>
+</html>

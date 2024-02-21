@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <title>PiStatTracker</title>
+</head>
+
+<style> 
+    body{
+            min-height: 100vh;
+            background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.575), rgba(0, 0, 0)), url('https://halo.wiki.gallery/images/3/39/HINF_CampaignOverview.gif');
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat;  
+        }
+
+    aside{
+            margin-bottom: 10px;
+            color: #ffffff; 
+            flex-direction: column;
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 135px; 
+            height: 100vh; 
+            background-color: #0000008f;
+            padding: 15px; 
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5); 
+            display: flex; /* Use flexbox */
+            align-items: flex-start; 
+            border-radius: 0.3rem;
+            padding-top: 100px;
+       }
+</style>
+<div id="root"></div> 
+
+<body>
+<div class="flex justify-center items-center h-screen">
+    <div class="flex border-2 border-gray-300 bg-white rounded-lg">
+        <input class="px-4 py-4 rounded-l-lg w-50 text-lg focus:outline-none" type="search" name="search" placeholder="Gamertag">
+        <button class="flex justify-center items-center p-2">
+            <img src="{{ url_for('static', filename='images/search.svg') }}" class="w-8 h-8 opactiy-10 ">
+        </button>
+    </div>
+</div>
+</body>
+
+<aside>
+    <div id="sidebar" class="sidebar justify-start text-sm">
+        <div class="flex absolute top-0 left-0 p-2">
+            <div>
+                <button class="text-white">
+                    <img src="{{ url_for('static', filename="images/sidebar.svg") }}" class="w-8 h-8 fill-current ">
+                </button>
+            </div>
+        </div>
+        <div class="text-lg">
+            <a href="#">PiStatTracker</a>
+        </div>
+        <div>
+            <a href="#">Switch Profile</a>
+        </div>
+        <div>
+            <a href="#">Display Settings</a>
+        </div>
+        <div>
+            <a href="#">About</a>
+        </div>
+    </div>
+</aside>
+
+</html>
