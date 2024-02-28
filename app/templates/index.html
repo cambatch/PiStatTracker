@@ -3,12 +3,14 @@
 {% block title %}PiStatTracker{% endblock %}
 
 {% block body %}
+<form action="/stats" method="post">
     <div class="flex justify-center items-center h-screen">
         <div class="flex border-2 border-gray-300 bg-white rounded-lg">
-            <input class="px-4 py-4 rounded-l-lg w-50 text-lg focus:outline-none" type="search" name="search" placeholder="Gamertag">
-            <button class="flex justify-center items-center p-2">
+            <input class="px-4 py-4 rounded-l-lg w-50 text-lg focus:outline-none" type="search" name="search" placeholder="Gamertag" >
+            <button class="flex justify-center items-center p-2" type="submit" name="submit">
                 <img src="{{ url_for('static', filename='images/search.svg') }}" class="w-8 h-8 opactiy-10 ">
             </button>
         </div>
     </div>
+</form>
 {% endblock %}

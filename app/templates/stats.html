@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}PiStatTracker{% endblock %}
+
+{% block body %}
+
+<div class="stats-container">
+    {% for stat_name, stat_value in stats.items() %}
+    <div class="stat-item">
+        <span class="stat-value">{{ stat_value }}</span>
+        <span class="stat-name">{{ stat_name | capitalize }}</span>
+    </div>
+    {% endfor %}
+</div>
+
+
+{% endblock %}
