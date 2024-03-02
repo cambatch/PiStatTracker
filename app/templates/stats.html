@@ -3,15 +3,51 @@
 {% block title %}PiStatTracker{% endblock %}
 
 {% block body %}
-
-<div class="stats-container">
-    {% for stat_name, stat_value in stats.items() %}
+<style>
+    .stats-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh; 
+    }
+    .stat-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%; 
+        max-width: 600px; 
+    }
+    #dynamicStatImage {
+        width: 200px; 
+        height: 200px; 
+        margin-right: 20px; 
+    }
+    .stat-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        font-size: 90px;
+    }
+    .stat-name, .stat-value {
+        text-align: center;
+        
+    }
+</style>
+<div class="stats-container" id="rotatingStat">
     <div class="stat-item">
-        <span class="stat-value">{{ stat_value }}</span>
-        <span class="stat-name">{{ stat_name | capitalize }}</span>
+        <img id="dynamicStatImage" src="" alt="Stat Image">
+        <div class="stat-text">
+            <span class="stat-value" id="dynamicStatValue">Loading...</span>
+            <span class="stat-name" id="dynamicStatName">Stat Name</span>
+        </div>
     </div>
-    {% endfor %}
 </div>
 
+<!-- Hidden elements for passing data to JS -->
+<div id="selectedStatsData" style="display: none;">{{ selected_stats | tojson }}</div>
+<div id="statsData" style="display: none;">{{ stats | tojson }}</div>
+
+<script src="{{ url_for('static', filename='js/statRotator.js') }}"></script>
 
 {% endblock %}
+
