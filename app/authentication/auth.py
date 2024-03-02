@@ -18,10 +18,65 @@ from datetime import datetime, timezone
 # =====================================================================
 # =====================================================================
 
-client_id = ''
-client_secret = ''
-redirect_uri = 'https://localhost'
 xuid = ''
+client_secret = ''
+client_id = ''
+auth_url = 'https://login.live.com/oauth20_authorize.srf?'
+redirect_uri = 'https://localhost'
+scope = 'Xboxlive.signin Xboxlive.offline_access'
+token_url = 'https://login.live.com/oauth20_token.srf'
+
+class TokenHandler:
+    def __init__(self, debug: bool = False):
+        self.oauth_token_response: OAuthToken = None
+        self.user_token_response: XboxUserToken = None
+        self.xsts_token_response: XboxXstsToken = None
+        self.spartan_token_response: SpartanToken = None
+        self.oauth_token: str = None
+        self.user_token: str = None
+        self.xsts_token: str = None
+        self.spartan_token: str = None
+        self.__get_tokens(debug=debug)
+
+    def __get_tokens(self, debug: bool):
+        if debug:
+            self.oauth_token_response = read_token('token.json')
+            if self.oauth_token_response is None or not self.oauth_token_response.is_valid():
+                print(get_auth_url(client_id, redirect_uri, scope, auth_url))
+                auth_code = input("Enter auth code: ")
+                self.oauth_token_response = request_oauth_token(client_id, client_secret, redirect_uri, scope, auth_code, token_url)
+        else:
+            print(get_auth_url(client_id, redirect_uri, scope, auth_url))
+            auth_code = input("Enter auth code: ")
+            self.oauth_token_response = request_oauth_token(client_id, client_secret, redirect_uri, scope, auth_code, token_url)
+
+        if self.oauth_token_response is None:
+            print("Failed to get oauth token!")
+            exit()
+
+        if debug:
+            save_token('token.json', self.oauth_token_response)
+        self.oauth_token = self.oauth_token_response.access_token
+        self.user_token_response = request_user_token(self.oauth_token)
+
+        if self.user_token_response is None:
+            print("Failed to get user token!")
+            exit()
+
+        self.user_token = self.user_token_response.user_token
+        self.xsts_token_response = request_xsts_token(self.user_token)
+
+        if self.xsts_token_response is None:
+            print("Failed to get xsts token!")
+            exit()
+        self.xsts_token = self.xsts_token_response.xsts_token
+        self.spartan_token_response = request_spartan_token(self.xsts_token)
+
+        if self.spartan_token_response is None:
+            print("Failed to get spartan token!")
+            exit()
+        self.spartan_token = self.spartan_token_response.spartan_token
+
 
 
 def keys_exist(data: dict, keys: list) -> bool:
@@ -31,29 +86,28 @@ def keys_exist(data: dict, keys: list) -> bool:
     return True
 
 
-def get_auth_url() -> str:
+def get_auth_url(client_id: str, redirect_uri: str, scope: str, auth_url: str) -> str:
     query_string = {
         'client_id': client_id,
         'response_type': 'code',
         'approval_prompt': 'auto',
-        'scope': 'Xboxlive.signin Xboxlive.offline_access',
+        'scope': scope,
         'redirect_uri': redirect_uri
     }
-    return 'https://login.live.com/oauth20_authorize.srf?' + urllib.parse.urlencode(query_string)
+    return  auth_url + urllib.parse.urlencode(query_string)
 
 
-def request_oauth_token(auth_code: str) -> OAuthToken:
+def request_oauth_token(client_id: str, client_secret: str, redirect_uri: str, scope: str, auth_code: str, token_url: str):
     request_content = {
         'grant_type': 'authorization_code',
         'code': auth_code,
         'approval_prompt': 'auto',
-        'scope' :'Xboxlive.signin Xboxlive.offline_access',
-        'redirect_uri': 'https://localhost',
+        'scope': scope,
+        'redirect_uri': redirect_uri,
         'client_id': client_id,
         'client_secret': client_secret
     }
-
-    response = requests.post('https://login.live.com/oauth20_token.srf', data=request_content)
+    response = requests.post(token_url, data=request_content)
 
     if response.status_code == 200:
         content = response.json()
@@ -63,7 +117,7 @@ def request_oauth_token(auth_code: str) -> OAuthToken:
         return None
 
 
-def refresh_oauth_token(refresh_token: str) -> OAuthToken:
+def refresh_oauth_token(client_id: str, client_secret: str, refresh_token: str, token_url: str) -> OAuthToken:
     request_content = {
         'grant_type': 'refresh_token',
         'refresh_token': refresh_token,
@@ -71,7 +125,7 @@ def refresh_oauth_token(refresh_token: str) -> OAuthToken:
         'client_secret': client_secret
     }
 
-    response = requests.post('https://login.live.com/oauth20_token.srf', json=request_content)
+    response = requests.post(token_url, json=request_content)
     content = response.json()
     if keys_exist(content, keys=['expires_in', 'access_token', 'refresh_token']):
         return OAuthToken(content.get('expires_in'), content.get('access_token'), content.get('refresh_token'), time())
@@ -199,7 +253,7 @@ def read_token(file_name: str) -> OAuthToken:
             if keys_exist(content, keys=['expires_in', 'access_token', 'refresh_token', 'issued']):
                 return OAuthToken(content.get('expires_in'), content.get('access_token'), content.get('refresh_token'), content.get('issued'))
     except:
-        print("Error reading json from file: " + file_name)
+        print("There was a problem reading token from: " + file_name)
         return None
     return None
 

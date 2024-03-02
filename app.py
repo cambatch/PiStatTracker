@@ -1,45 +1,38 @@
-from flask import Flask, render_template, url_for, request, redirect
-from app.authentication.auth import get_oauth_token, request_user_token, request_xsts_token, request_spartan_token
+from flask import Flask, render_template, url_for, request, redirect, make_response, jsonify
+from app.authentication.auth import TokenHandler
 from app.halo.requests import get_service_record
 import os
 import json
 
-if __name__ == '__main__' and os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-    oauth_token = get_oauth_token()
-    if oauth_token is None:
-        print("Error getting auth token!\nExiting...")
-        exit()
-    user_token = request_user_token(oauth_token.access_token)
-    if user_token is not None:
-        xsts_token = request_xsts_token(user_token.user_token)
-        if xsts_token is not None:
-            spartan_token = request_spartan_token(xsts_token.xsts_token)
-            if spartan_token is not None:
-                pass
-                # print(get_service_record(spartan_token.spartan_token, "PLACEHOLDER", None))
-            else:
-                print("Failed to get spartan token!")
-        else:
-            print("Failed to get xsts token!")
-    else:
-        print("Failed to get user token!")
 
+if __name__ == '__main__' and os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    # Set debug to False or omit for non-development environments
+    token_handler = TokenHandler(debug=True)
 
 app = Flask(__name__, static_folder='app/static', template_folder='app/templates')
 
-# These are just here to get something to show up for now...
+
 @app.route('/')
 def home():
     with open('service_record_test.json', 'w') as f:
-        f.write(json.dumps(get_service_record(spartan_token.spartan_token, 'Jericz', None)))
-    return render_template('index.html')
+        f.write(json.dumps(get_service_record(token_handler.spartan_token, 'Jericz', None)))
+    response = make_response(render_template('index.html'))
+    response.set_cookie('user_settings', value='Personal Score', samesite='Lax', max_age=60*60*24*365)
+    return response
 
+statistics = ['Personal Score', 'KD', 'Matches', 'Win %', 'Medal Count', 'Accuracy', 'test']
+sprees = ['K Spree', 'Frenzy', 'Running Riot', 'Rampage', 'Nightmare', 'Boogeyman', 'Grim Reaper', 'Demon']
 @app.route('/settings')
 def settings():
-    return render_template('displaySettings.html')
+    if request.cookies.get('user_settings') is not None:
+        selected_settings = request.cookies.get('user_settings').split(',')
+    else:
+        return redirect('/')
+
+    return render_template('displaySettings.html', selected_settings=selected_settings, statistics=statistics, sprees=sprees)
 
 
-STAT_KEYS ={
+STAT_KEYS = {
     'personal score': ('CoreStats', 'PersonalScore'),
     'eliminations': ('CoreStats', 'Kills'),
     'deaths': ('CoreStats', 'Deaths'),
@@ -48,32 +41,42 @@ STAT_KEYS ={
 def get_stat_value(data, path):
     for key in path:
         data = data.get(key, {})
-        if not isinstance(data, dict):  
+        if not isinstance(data, dict):
             return data
-    return 'Not available' 
+    return 'Not available'
 
 @app.route('/stats', methods=['POST'])
 def stats():
     if request.method == 'POST':
         user_text = request.form['search']
-        data = get_service_record(spartan_token.spartan_token, user_text, None)
+        data = get_service_record(token_handler.spartan_token, user_text, None)
         with open('user_text.json', 'w') as f:
-            f.write(json.dumps(get_service_record(spartan_token.spartan_token, user_text, None)))
+            f.write(json.dumps(get_service_record(token_handler.spartan_token, user_text, None)))
         return redirect('./stats')
 
 
 @app.route('/stats', methods=['GET'])
 def display_stats():
+    selected_stats = request.cookies.get('user_settings').split(',')
     try:
         with open('user_text.json', 'r') as f:
             data = json.load(f)
     except (FileNotFoundError, KeyError):
         personal_score = 'Data not available'
     stats = {stat: get_stat_value(data, path) for stat, path in STAT_KEYS.items()}
-    return render_template('stats.html', stats=stats)
+    return render_template('stats.html', stats=stats, selected_stats=selected_stats)
 
 
-        
+# Save settings from settings selection
+@app.route('/save-settings', methods=['POST'])
+def save_settings():
+    selections = request.json.get('selections', [])
+    response = make_response(jsonify({"success": True}))
+    print(selections)
+    response.set_cookie('user_settings', value=','.join(selections), samesite='Lax', max_age=60*60*24*365)
+    return response
+
+
 # # Route to handle form submission
 # @app.route('/submit', methods=['POST'])
 # def submit():

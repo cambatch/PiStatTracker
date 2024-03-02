@@ -56,6 +56,38 @@
                     font-size: 50px;
                     color: #5ea8ee; 
                 }
+
+            .category-container{
+                display: flex;
+                overflow-x: auto;
+                padding: 10px 0;
+                white-space: nowrap;
+                color: white;
+                &::-webkit-scrollbar {
+                width: 6px;
+                }
+                &::-webkit-scrollbar-thumb {
+                background: #00000065;
+                border-radius: 5px;
+                }
+            }
+
+            .category-item{
+                    display: inline-block;
+                    margin-right: 20px;
+                    width: 100px;
+                    height: 100px;
+                    border-width: 2px;
+                    border-color: #40677e;
+                    border-radius: 0.25rem;
+                    flex-shrink: 0;
+                }
+
+            .category-item.selected{
+                background-color: #40677e;
+                color: #FFF;
+                border-color: #FFF;
+            }
     </style>
 </head>
 
@@ -80,7 +112,7 @@
             <a href="/" >Switch Profile</a>
         </div>
         <div>
-            <a href="#">Display Settings</a>
+            <a href="/settings">Display Settings</a>
         </div>
         <div>
             <a href="#">About</a>
