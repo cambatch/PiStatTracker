@@ -111,12 +111,13 @@ def stats():
         data = get_service_record(token_handler.spartan_token, user_text, None)
         with open('user_text.json', 'w') as f:
             f.write(json.dumps(get_service_record(token_handler.spartan_token, user_text, None)))
-        return redirect('./stats')
+        return redirect(url_for('display_stats', gamertag=user_text))
 
 
 @app.route('/stats', methods=['GET'])
 def display_stats():
     selected_stats = request.cookies.get('user_settings').split(',')
+    gamertag = request.args.get('gamertag', 'default_gamertag')
     try:
         with open('user_text.json', 'r') as f:
             data = json.load(f)
@@ -124,7 +125,7 @@ def display_stats():
         personal_score = 'Data not available'
     # stats = {stat: get_stat_value(data, path) for stat, path in STAT_KEYS.items()}
     stats = extract_data(data)
-    return render_template('stats.html', stats=stats, selected_stats=selected_stats)
+    return render_template('stats.html', stats=stats, selected_stats=selected_stats, gamertag=gamertag)
 
 
 # Save settings from settings selection
@@ -136,6 +137,9 @@ def save_settings():
     response.set_cookie('user_settings', value=','.join(selections), samesite='Lax', max_age=60*60*24*365)
     return response
 
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
 
 # # Route to handle form submission
 # @app.route('/submit', methods=['POST'])
