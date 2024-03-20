@@ -36,15 +36,18 @@ class TokenHandler:
         self.user_token: str = None
         self.xsts_token: str = None
         self.spartan_token: str = None
-        self.__get_tokens(debug=debug)
+        self.debug_mode: bool = debug
+        self.__get_tokens()
 
-    def __get_tokens(self, debug: bool):
-        if debug:
+    def __get_tokens(self):
+        if self.debug_mode:
             self.oauth_token_response = read_token('token.json')
             if self.oauth_token_response is None or not self.oauth_token_response.is_valid():
                 print(get_auth_url(client_id, redirect_uri, scope, auth_url))
                 auth_code = input("Enter auth code: ")
                 self.oauth_token_response = request_oauth_token(client_id, client_secret, redirect_uri, scope, auth_code, token_url)
+            else:
+                print("Using stored token from json file")
         else:
             print(get_auth_url(client_id, redirect_uri, scope, auth_url))
             auth_code = input("Enter auth code: ")
@@ -54,7 +57,7 @@ class TokenHandler:
             print("Failed to get oauth token!")
             exit()
 
-        if debug:
+        if self.debug_mode:
             save_token('token.json', self.oauth_token_response)
         self.oauth_token = self.oauth_token_response.access_token
         self.user_token_response = request_user_token(self.oauth_token)
@@ -77,14 +80,43 @@ class TokenHandler:
             exit()
         self.spartan_token = self.spartan_token_response.spartan_token
 
+    def need_refresh(self):
+        return not self.oauth_token_response.is_valid() and not self.spartan_token_response.is_valid()
+
+    def refresh_tokens(self):
+        new_oauth_token = refresh_oauth_token(client_id, client_secret, self.oauth_token_response.refresh_token, token_url)
+        if new_oauth_token is None:
+            print("Failed to refresh oauth token!")
+            return
+        new_user_token = request_user_token(new_oauth_token.access_token)
+        if new_user_token is None:
+            print("Failed to refresh user token!")
+            return
+        new_xsts_token = request_xsts_token(new_user_token.user_token)
+        if new_xsts_token is None:
+            print("Failed to refresh xsts token!")
+            return
+        new_spartan_token = request_spartan_token(new_xsts_token.xsts_token)
+        if new_spartan_token is None:
+            print("Failed to refresh spartan token!")
+            return
+
+        self.oauth_token_response = new_oauth_token
+        self.oauth_token = self.oauth_token_response.access_token
+        self.user_token_response = new_user_token
+        self.user_token = self.user_token_response.user_token
+        self.xsts_token_response = new_xsts_token
+        self.xsts_token = self.xsts_token_response.xsts_token
+        self.spartan_token_response = new_spartan_token
+        self.spartan_token = self.spartan_token_response.spartan_token
+
+        # update json token in debug mode
+        if self.debug_mode:
+            save_token('token.json', self.oauth_token_response)
 
 
 def keys_exist(data: dict, keys: list) -> bool:
-    for key in data.keys():
-        if key not in data:
-           return False
-    return True
-
+    return all(key in data for key in keys)
 
 def get_auth_url(client_id: str, redirect_uri: str, scope: str, auth_url: str) -> str:
     query_string = {
@@ -112,7 +144,7 @@ def request_oauth_token(client_id: str, client_secret: str, redirect_uri: str, s
     if response.status_code == 200:
         content = response.json()
         if keys_exist(content, keys=['expires_in', 'access_token', 'refresh_token']):
-            return OAuthToken(content.get('expires_in'), content.get('access_token'), content.get('refresh_token'), time())
+            return OAuthToken(content.get('expires_in'), content.get('access_token'), content.get('refresh_token'), datetime.now(timezone.utc))
     else:
         return None
 
@@ -125,11 +157,16 @@ def refresh_oauth_token(client_id: str, client_secret: str, refresh_token: str, 
         'client_secret': client_secret
     }
 
-    response = requests.post(token_url, json=request_content)
-    content = response.json()
-    if keys_exist(content, keys=['expires_in', 'access_token', 'refresh_token']):
-        return OAuthToken(content.get('expires_in'), content.get('access_token'), content.get('refresh_token'), time())
-    return None
+    response = requests.post(token_url, data=request_content)
+
+    if response.status_code == 200:
+        content = response.json()
+        if keys_exist(content, keys=['expires_in', 'access_token', 'refresh_token']):
+            return OAuthToken(content.get('expires_in'), content.get('access_token'), content.get('refresh_token'), datetime.now(timezone.utc))
+        else:
+            return None
+    else:
+        return None
 
 
 def request_user_token(access_token: str) -> XboxUserToken:
@@ -171,7 +208,7 @@ def request_xsts_token(user_token: str) -> XboxXstsToken:
         "RelyingParty": "https://prod.xsts.halowaypoint.com/",
         "TokenType": "JWT"
     }
-    headers = { 
+    headers = {
         'x-xbl-contract-version': '1',
         'Accept': 'application/json'
     }
@@ -213,7 +250,7 @@ def request_spartan_token(xsts_token: str) -> SpartanToken:
         if keys_exist(content, keys=['ExpiresUtc', 'SpartanToken', 'TokenDuration']):
             utc_date = content.get('ExpiresUtc').get('ISO8601Date')
             utc_date = datetime.fromisoformat(utc_date.rstrip('Z')).replace(tzinfo=timezone.utc)
-            return SpartanToken(content.get('SpartanToken'), utc_date)
+            return SpartanToken(content.get('SpartanToken'), utc_date, content.get('TokenDuration'))
         else:
             print("Spartan token request response does not match expected format.")
             return None
@@ -244,14 +281,14 @@ def get_v3_token(user_hash: str, user_token: str) -> str:
 
 def save_token(file_name: str, token: OAuthToken) -> None:
     with open(file_name, 'w') as f:
-        f.write(json.dumps(token.__dict__, indent=4))
+        f.write(token.to_json())
 
 def read_token(file_name: str) -> OAuthToken:
     try:
         with open(file_name, 'r') as f:
             content = json.load(f)
             if keys_exist(content, keys=['expires_in', 'access_token', 'refresh_token', 'issued']):
-                return OAuthToken(content.get('expires_in'), content.get('access_token'), content.get('refresh_token'), content.get('issued'))
+                return OAuthToken.from_json(content)
     except:
         print("There was a problem reading token from: " + file_name)
         return None
