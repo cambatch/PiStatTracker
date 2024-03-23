@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css')}}" rel="stylesheet">
+    <link href="{{url_for('static',filename='css/main.css')}}" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.typekit.net/hrw5wys.css">
     <title>{% block title %}{% endblock %}</title>
     <style>
             body{
@@ -96,7 +97,7 @@
     {% block body %}{% endblock %}
 </body>
 
-<aside>
+<aside class="font-industry">
     <div id="sidebar" class="sidebar justify-start text-sm">
         <div class="flex absolute top-0 left-0 p-2">
             <div>
