@@ -125,7 +125,11 @@ def save_settings():
 
 @app.route('/dashboard')
 def dashboard():
-    return render_template('dashboard.html')
+    gamertag = request.args.get('gamertag', 'default_gamertag')
+    # Fetch the service record for the given gamertag
+    data = get_service_record(token_handler.spartan_token, gamertag, None)
+    stats = extract_data(data)
+    return render_template('dashboard.html', gamertag=gamertag, stats=stats)
 
 
 if __name__ == '__main__':
