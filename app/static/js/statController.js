@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     window.toggleView = function(viewId) {
         const dashboardView = document.getElementById('dashboardView');
         const singleStatView = document.getElementById('singleStatView');
-        // Toggle visibility based on the button clicked
+        //Toggle visibility based on the button clicked
         if (viewId === 'dashboardView') {
             dashboardView.style.display = (dashboardView.style.display === 'none') ? 'block' : 'none';
             singleStatView.style.display = 'none'; 
@@ -53,6 +53,49 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function initDashboardView(selectedStats, stats) {
-        
+        const categories = {
+            'Multi Medals': ['Double', 'Triple', 'Overkill', 'Killtacular', 'Killtrocity', 'Killimanjaro', 'Killtastrophe', 'Killpocalypse', 'Killionaire'],
+            'Spree Medals': ['K Spree', 'Frenzy', 'Running Riot', 'Rampage', 'Nightmare', 'Boogeyman', 'Grim Reaper', 'Demon'],
+            'Skill Medals': ['Perfect', 'No Scope', 'Quigley', 'Ninja', 'Remote Detonation'],
+            'Secondary Stats': ['KD', 'Matches', 'Win %', 'Medal Count', 'Accuracy', 'Average KDA']
+        };
+        for (let category in categories) {
+            const container = document.getElementById(`${category.toLowerCase().replace(/\s+/g, '-')}-parent`);
+            container.innerHTML = ''; // Clear existing content
+            //Heading
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'mb-4';
+            categoryDiv.innerHTML = `<h4 class="text-title-md font-bold text-white dark:text-white">${category}</h4>`;
+            container.appendChild(categoryDiv);
+            // Metrics container
+            const metricsDiv = document.createElement('div');
+            metricsDiv.className = 'flex flex-col gap-2';
+            // Loop through stats in the categories
+            categories[category].forEach(stat => {
+                if (selectedStats.includes(stat)) { 
+                    let statValue = stats[stat];
+                    if (!isNaN(statValue)) {   
+                        if (statValue % 1 !== 0) {
+                            statValue = statValue.toFixed(2); 
+                        }
+                        statValue = statValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); 
+                    }
+
+                    const formattedStatName = stat.replace(/\s+/g, '_'); //replace space with underscore
+                    const statDiv = document.createElement('div');
+                    statDiv.className = 'flex items-center justify-between';
+                    statDiv.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <img src="/static/images/medals/${formattedStatName}.png" alt="${stat}" class="h-6">
+                            <span class="text-sm font-medium text-white">${stat}</span>
+                        </div>
+                        <span class="text-meta-3 text-sm font-medium text-white">${statValue}</span>
+                    `;
+                    metricsDiv.appendChild(statDiv);
+                }
+            });
+            container.appendChild(metricsDiv);
+        }
     }
+    
 });
