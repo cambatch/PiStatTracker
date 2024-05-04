@@ -4,30 +4,29 @@ import urllib.parse
 import requests
 from time import time
 from datetime import datetime, timezone
+import os
 
 
-# =====================================================================
-# =====================================================================
-# =====================================================================
-# =====================================================================
-# =====================================================================
-# CLIENT_ID, CLIENT_SECRET, AND XUID ARE NOT TO BE COMMITTED TO GITHUB
-# =====================================================================
-# =====================================================================
-# =====================================================================
-# =====================================================================
-# =====================================================================
-
-xuid = ''
-client_secret = ''
-client_id = ''
+xuid = os.getenv('XUID')
+client_secret = os.getenv('CLIENT_SECRET')
+client_id = os.getenv('CLIENT_ID')
 auth_url = 'https://login.live.com/oauth20_authorize.srf?'
 redirect_uri = 'https://localhost'
 scope = 'Xboxlive.signin Xboxlive.offline_access'
 token_url = 'https://login.live.com/oauth20_token.srf'
 
+def try_get_oauth_token() -> OAuthToken:
+    auth_code = os.environ['AUTH_CODE']
+    oauth_token_response = request_oauth_token(client_id, client_secret, redirect_uri, scope, auth_code, token_url)
+    if oauth_token_response is None:
+        print("Failed to aqcuire OAuth token. exiting...")
+        exit()
+    os.environ['OAUTH_TOKEN'] = oauth_token_response.to_json()
+    return oauth_token_response
+
+
 class TokenHandler:
-    def __init__(self, debug: bool = False):
+    def __init__(self):
         self.oauth_token_response: OAuthToken = None
         self.user_token_response: XboxUserToken = None
         self.xsts_token_response: XboxXstsToken = None
@@ -36,29 +35,20 @@ class TokenHandler:
         self.user_token: str = None
         self.xsts_token: str = None
         self.spartan_token: str = None
-        self.debug_mode: bool = debug
         self.__get_tokens()
 
     def __get_tokens(self):
-        if self.debug_mode:
-            self.oauth_token_response = read_token('token.json')
-            if self.oauth_token_response is None or not self.oauth_token_response.is_valid():
-                print(get_auth_url(client_id, redirect_uri, scope, auth_url))
-                auth_code = input("Enter auth code: ")
-                self.oauth_token_response = request_oauth_token(client_id, client_secret, redirect_uri, scope, auth_code, token_url)
-            else:
-                print("Using stored token from json file")
+        prev_token = os.getenv("OAUTH_TOKEN")
+
+        if prev_token is None:
+            self.oauth_token_response = try_get_oauth_token()
         else:
-            print(get_auth_url(client_id, redirect_uri, scope, auth_url))
-            auth_code = input("Enter auth code: ")
-            self.oauth_token_response = request_oauth_token(client_id, client_secret, redirect_uri, scope, auth_code, token_url)
+            prev_token = OAuthToken.from_json(json.loads(prev_token))
+            if not prev_token.is_valid():
+                self.oauth_token_response = try_get_oauth_token() 
+            else:
+                self.oauth_token_response = prev_token
 
-        if self.oauth_token_response is None:
-            print("Failed to get oauth token!")
-            exit()
-
-        if self.debug_mode:
-            save_token('token.json', self.oauth_token_response)
         self.oauth_token = self.oauth_token_response.access_token
         self.user_token_response = request_user_token(self.oauth_token)
 
@@ -72,12 +62,14 @@ class TokenHandler:
         if self.xsts_token_response is None:
             print("Failed to get xsts token!")
             exit()
+
         self.xsts_token = self.xsts_token_response.xsts_token
         self.spartan_token_response = request_spartan_token(self.xsts_token)
 
         if self.spartan_token_response is None:
             print("Failed to get spartan token!")
             exit()
+
         self.spartan_token = self.spartan_token_response.spartan_token
 
     def need_refresh(self):
@@ -110,9 +102,7 @@ class TokenHandler:
         self.spartan_token_response = new_spartan_token
         self.spartan_token = self.spartan_token_response.spartan_token
 
-        # update json token in debug mode
-        if self.debug_mode:
-            save_token('token.json', self.oauth_token_response)
+        os.environ['OAUTH_TOKEN'] = self.oauth_token_response.to_json()
 
 
 def keys_exist(data: dict, keys: list) -> bool:
@@ -146,6 +136,7 @@ def request_oauth_token(client_id: str, client_secret: str, redirect_uri: str, s
         if keys_exist(content, keys=['expires_in', 'access_token', 'refresh_token']):
             return OAuthToken(content.get('expires_in'), content.get('access_token'), content.get('refresh_token'), datetime.now(timezone.utc))
     else:
+        print(f"Failed to get OAuth token!\n\t{print_response_error(response.status_code, response.reason, response.text)}")
         return None
 
 
@@ -164,8 +155,10 @@ def refresh_oauth_token(client_id: str, client_secret: str, refresh_token: str, 
         if keys_exist(content, keys=['expires_in', 'access_token', 'refresh_token']):
             return OAuthToken(content.get('expires_in'), content.get('access_token'), content.get('refresh_token'), datetime.now(timezone.utc))
         else:
+            print("OAuth token response does not match expected format.")
             return None
     else:
+        print(f"Failed to refresh oauth token!\n\t{print_response_error(response.status_code, response.reason, response.text)}")
         return None
 
 
@@ -195,7 +188,7 @@ def request_user_token(access_token: str) -> XboxUserToken:
             print("User token request response does not match expected format.")
             return None
     else:
-        print(f"Failed to get user token. status code: {response.status_code}")
+        print(f"Failed to get user token.\n\t{print_response_error(response.status_code, response.reason, response.text)}")
         return None
 
 
@@ -225,7 +218,7 @@ def request_xsts_token(user_token: str) -> XboxXstsToken:
             print("Xsts token request response does not match expected format.")
             return None
     else:
-        print(f"Failed to get xsts token. status code: {response.status_code}")
+        print(f"Failed to get xsts token.\n\t{print_response_error(response.status_code, response.reason, response.text)}")
         return None
 
 
@@ -255,7 +248,7 @@ def request_spartan_token(xsts_token: str) -> SpartanToken:
             print("Spartan token request response does not match expected format.")
             return None
     else:
-        print(f"Failed to get spartan token. status code: {response.status_code}")
+        print(f"Failed to get spartan token.\n\t{print_response_error(response.status_code, response.reason, response.text)}")
         return None
 
 
@@ -279,35 +272,6 @@ def get_clearance(spartan_token: str, xuid: str) -> str:
 def get_v3_token(user_hash: str, user_token: str) -> str:
     return f'XBL3.0 x={user_hash};{user_token}'
 
-def save_token(file_name: str, token: OAuthToken) -> None:
-    with open(file_name, 'w') as f:
-        f.write(token.to_json())
 
-def read_token(file_name: str) -> OAuthToken:
-    try:
-        with open(file_name, 'r') as f:
-            content = json.load(f)
-            if keys_exist(content, keys=['expires_in', 'access_token', 'refresh_token', 'issued']):
-                return OAuthToken.from_json(content)
-    except:
-        print("There was a problem reading token from: " + file_name)
-        return None
-    return None
-
-
-def get_oauth_token() -> OAuthToken:
-    token = read_token('token.json')
-    if token is None or not token.is_valid():
-        url = get_auth_url()
-        print(url)
-        auth_code = input("Enter auth code: ")
-        token = request_oauth_token(auth_code)
-        if token is not None:
-            save_token('token.json', token)
-            return token
-        else:
-            return None
-    else:
-        save_token('token.json', token)
-        return token
-
+def print_response_error(status_code, reason, text) -> str:
+    return f"{status_code} {reason}\n\t{text}"

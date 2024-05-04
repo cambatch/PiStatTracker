@@ -3,12 +3,8 @@ from app.authentication.auth import TokenHandler
 from app.halo.requests import get_service_record
 import os
 
-
-if __name__ == '__main__' and os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-    # Set debug to False or omit for non-development environments
-    token_handler = TokenHandler(debug=True)
-
 app = Flask(__name__, static_folder='app/static', template_folder='app/templates')
+token_handler = TokenHandler()
 
 
 @app.route('/')
@@ -121,15 +117,6 @@ def save_settings():
     print(selections)
     response.set_cookie('user_settings', value=','.join(selections), samesite='Lax', max_age=60*60*24*365)
     return response
-
-
-@app.route('/dashboard')
-def dashboard():
-    gamertag = request.args.get('gamertag', 'default_gamertag')
-    # Fetch the service record for the given gamertag
-    data = get_service_record(token_handler.spartan_token, gamertag, None)
-    stats = extract_data(data)
-    return render_template('dashboard.html', gamertag=gamertag, stats=stats)
 
 
 if __name__ == '__main__':
