@@ -9,6 +9,7 @@
         align-items: center;
         justify-content: center;
         height: 100vh; 
+        margin: 0px;
     }
     .stat-item {
         display: flex;
@@ -60,10 +61,12 @@
             <div class="flex items-center justify-center space-x-2">
               <!-- Adjust space between items as needed -->
               <h4 class="text-title-md scale-200 font-industry text-6xl font-bold text-white dark:text-white">{{ gamertag }}</h4>
-              <img src="{{ url_for('static', filename='images/careerRanks/hero.png') }}" alt="Rank" class="scale-75" />
+              <img id ="rank-image" src="{{ url_for('static', filename='images/careerRanks/{{Rank}}.png') }}" alt="Rank" class="scale-75"/>
             </div>
             <!-- Additional content for Personal Stats -->
-            <h4 class="text-title-md font-bold text-white dark:text-white">Personal Score</h4>
+           
+            <h4 id= "rank-text" class="text-title-md font-bold text-white dark:text-white">Rank</h4>
+        
           </div>
       
           <!-- Secondary Stats Section (taking up the remaining space) -->
@@ -213,14 +216,14 @@
       
           <!-- Match History Section (aligned with Secondary Stats in width) -->
           <div class="border-stroke shadow-default p-7.5 rounded-md border-black bg-gray-900 px-7 py-3 xl:col-span-1">
-            <h4 class="text-title-md font-bold text-white dark:text-white">Match History</h4>
-            <button onclick="toggleView('singleStatView')" class="text-white">Switch View</button>
+            <img src="{{ url_for('static', filename='images/medals/oni_classified_emblem.png') }}">
+            <button onclick="toggleView('singleStatView')" class="text-white text-center">Switch View</button>
           </div>
         </div>
       </div>
       
 </div>
-<script src="{{ url_for('static', filename='js/statController.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/statController.js') }}"></script>
 
 {% endblock %}
 

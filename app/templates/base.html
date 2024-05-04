@@ -114,7 +114,7 @@
 </head>
 
 <body class="font-industry">
-    <div class="flex min-h-screen bg-transparent">
+    <div class="flex bg-transparent">
 
         <button id="toggleButton" class="p-4 absolute z-50 left-64 top-0">
             <img src="{{ url_for('static', filename='images/sidebar.svg') }}" class="w-8 h-8 fill-current ">
@@ -135,7 +135,7 @@
     </div>
 
     <div class="main-content">
-        <div class="p-4">
+        <div class="">
             {% block body %}{% endblock %}
         </div>
     </div>

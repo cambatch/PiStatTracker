@@ -1,7 +1,7 @@
+import ranks from './rankData.js';
 document.addEventListener('DOMContentLoaded', (event) => {
     const selectedStats = JSON.parse(document.getElementById('selectedStatsData').textContent);
     const stats = JSON.parse(document.getElementById('statsData').textContent);
-   
     if (document.getElementById('singleStatView')) {
         initSingleStatView(selectedStats, stats);
     }
@@ -95,7 +95,39 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 }
             });
             container.appendChild(metricsDiv);
+            calculateRank(stats);
+            displayRank(stats);
         }
     }
-    
+
+    function calculateRank(stats){
+        const xp = stats['Personal Score'];
+        console.log(stats['Personal Score']);
+        let playerRank = "recruit";
+        for (let i = 0; i < ranks.length; i++) {
+            if (xp >= ranks[i].minXP && (i + 1 === ranks.length || xp < ranks[i + 1].minXP)) {
+                playerRank = ranks[i].name;
+                break; 
+            }
+        }
+        return playerRank;
+    }
+
+    function displayRank(stats){
+        const rank = calculateRank(stats);
+        const rankText = document.getElementById('rank-text');
+        const rankImage = document.getElementById('rank-image');
+        function formatRankText(text) {
+            text = text.replace(/_/g, ' ');
+            return text.replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        if (rankText){
+            rankText.textContent =  formatRankText(rank);
+        }
+        if (rankImage){
+            rankImage.src = `/static/images/careerRanks/${rank.replace(/\s+/g, '_')}.png`;  
+            rankImage.alt = rank;  
+        }
+    }
 });
