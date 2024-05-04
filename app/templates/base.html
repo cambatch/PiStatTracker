@@ -15,23 +15,44 @@
                     background-repeat: no-repeat;
                 }
 
-            aside{
-                    margin-bottom: 10px;
-                    color: #ffffff;
+                #sidebar {
+                    padding-top: 100px;
                     flex-direction: column;
-                    position: fixed;
-                    top: 0;
-                    left: 0;
+                    z-index: 40;
                     width: 135px;
                     height: 100vh;
+                    position: fixed;
+                    left: 0;
+                    top: 0;
+                    margin-bottom: 10px;
+                    color: #0000008f;
                     background-color: #0000008f;
-                    padding: 15px;
                     box-shadow: 2px 0 5px rgba(0,0,0,0.5);
-                    display: flex; /* Use flexbox */
                     align-items: flex-start;
                     border-radius: 0.3rem;
-                    padding-top: 100px;
-            }
+                    transform: translateX(-100%);
+                    transition: transform 0.3s ease-in-out, left 0.3s ease-in-out;
+                }
+                #sidebar .text-sm {
+                    margin-top: 10px;
+                }
+                #sidebar.show {
+                    transform: translateX(0);
+                }
+
+                #toggleButton {
+                    position: fixed;
+                    z-index: 50;
+                    top: 10px;
+                    left: 10px;
+                    transition: left 0.3s ease-in-out;
+                }
+
+                .main-content {
+                    transition: margin-left 0.3s ease-in-out;
+                    margin-left: 0;
+                }
+
             .stats-container {
                     display: flex;
                     flex-direction: column;
@@ -92,32 +113,33 @@
     </style>
 </head>
 
-<div id="root"></div>
-<body>
-    {% block body %}{% endblock %}
-</body>
+<body class="font-industry">
+    <div class="flex min-h-screen bg-transparent">
 
-<aside class="font-industry">
-    <div id="sidebar" class="sidebar justify-start text-sm">
-        <div class="flex absolute top-0 left-0 p-2">
-            <div>
-                <button class="text-white">
-                    <img src="{{ url_for('static', filename='images/sidebar.svg') }}" class="w-8 h-8 fill-current ">
-                </button>
+        <button id="toggleButton" class="p-4 absolute z-50 left-64 top-0">
+            <img src="{{ url_for('static', filename='images/sidebar.svg') }}" class="w-8 h-8 fill-current ">
+        </button>
+
+        <aside id="sidebar" class="bg-black bg-opacity-50 w-60 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full transition duration-300 ease-in-out z-40">
+            <div class="text-white text-lg">
+                <a href="/">PiStatTracker</a>
             </div>
-        </div>
-        <div class="text-lg">
-            <a href="/">PiStatTracker</a>
-        </div>
-        <div>
-            <a href="/" >Switch Profile</a>
-        </div>
-        <div>
-            <a href="/settings">Display Settings</a>
-        </div>
-        <div>
-            <a href="#">About</a>
+            <div class="text-white">
+                <ul>
+                    <li class="text-sm"><a href="/">Switch Profile</a></li>
+                    <li class="text-sm"><a href="/settings">Display Settings</a></li>
+                    <li class="text-sm"><a href="#">About</a></li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+
+    <div class="main-content">
+        <div class="p-4">
+            {% block body %}{% endblock %}
         </div>
     </div>
-</aside>
+
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+</body>
 </html>
